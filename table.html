@@ -1,0 +1,42 @@
+
+@model List<>
+@{
+    int count = 0;
+}
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title"> Table</h3>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">Create</a>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th style="width: 10px">No1</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th style="width: 40px">Settings</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (GetSpeakerVM getSpeakerVm in Model)
+            {
+                <tr class="align-middle">
+                    <td>@(++count)</td>
+                    <td><img src="~/images/@" style="width: 120px"/></td>
+                    <td>@.</td>
+                    <td>@</td>
+                    <td><span >
+                        <div class="btn-group mb-2" role="group" aria-label="Basic example">
+                            <a asp-action="Update" class="btn btn-success" asp-route-id="@getSpeakerVm.Id">Update</a>
+                            <a asp-action="Delete" class="btn btn-danger" asp-route-id="@getSpeakerVm.Id">Delete</a>
+                            <a asp-action="Detail" class="btn btn-outline-danger" asp-route-id="@getSpeakerVm.Id">Detail</a>
+                        </div>
+                    </span></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

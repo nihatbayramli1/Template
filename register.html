@@ -1,0 +1,46 @@
+@model Exam15.ViewModels.Account.RegisterVM
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 40px 0;">
+    <div class="card shadow-sm" style="width: 350px;">
+        <div class="card-body register-card-body">
+            <h3 class="text-center mb-4 text-primary" style="margin-left: -200px">Register</h3>
+            
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="Name" class="form-control" placeholder="Name"/>
+                    <span asp-validation-for="Name" class="text-danger small w-100"></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="Surname" class="form-control" placeholder="Surname"/>
+                    <span asp-validation-for="Surname" class="text-danger small w-100"></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="Username" class="form-control" placeholder="Username"/>
+                    <span asp-validation-for="Username" class="text-danger small w-100"></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="Email" class="form-control" placeholder="Email"/>
+                    <span asp-validation-for="Email" class="text-danger small w-100"></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="Password" class="form-control" placeholder="Password"/>
+                    <span asp-validation-for="Password" class="text-danger small w-100"></span>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm Password"/>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small w-100"></span>
+                </div>                
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Register</button>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary flex-grow-1">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
