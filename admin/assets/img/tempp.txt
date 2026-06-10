@@ -1,0 +1,271 @@
+template
+1. MƏRHƏLƏ: AppDbContext.cs FAYLININ DƏYİŞDİRİLMƏSİİlk öncə verilənlər bazası faylımızı Identity (Login-Register) sisteminə uyğunlaşdırırıq.Visual Studio-da sağ tərəfdəki pəncərədən (Solution Explorer) Data qovluğunu tap və içindəki AppDbContext.cs faylına iki dəfə klikləyərək aç.Faylın içindəki bütün kodları tamamilə sil.Yerünə bu təmiz kodu birbaşa yapışdır:C#using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using EatryCafe.Models;
+
+namespace EatryCafe.Data
+{
+    public class AppDbContext : IdentityDbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Chef> Chefs { get; set; }
+    }
+}
+2. MƏRHƏLƏ: Program.cs FAYLININ DƏYİŞDİRİLMƏSİ
+İndi layihəyə loqin və təhlükəsizlik icazələrini tanıdan kodları əlavə edirik.Solution Explorer-də ən aşağıda dayanan Program.cs faylını iki dəfə klikləyərək aç.İçindəki köhnə kodların hamısını sil.Yerünə bu tam və hazır kodu yapışdır:C#using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using EatryCafe.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
+});
+
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.Run();
+3. MƏRHƏLƏ: MIGRATION (MİQRASİYA) EDİB BAZANI YENİLƏMƏKYazdığımız loqin cədvəllərini SQL Serverə göndərməliyik.Visual Studio-da ən yuxarı menyudan Tools düyməsinə bas.Açılan siyahıdan NuGet Package Manager üzərinə gəl və ordan Package Manager Console düyməsini seç.Ekranın aşağısında açılan qara pəncərədə yanıb-sönən kursorun qabağına bu kodu yaz və Enter sıx:ShellAdd-Migration IdentityAndChefUpdate
+O proses bitəndən sonra dərhal eyni yerə bu kodu yaz və yenidən Enter sıx:ShellUpdate-Database
+4. MƏRHƏLƏ: ChefController.cs (CRUD) YARATMAQ VƏ YAZMAQSolution Explorer-də Controllers qovluğunun üzərinə siçanın sağ düyməsini vur.Add $\rightarrow$ Controller düyməsini seç.Açılan pəncərədə MVC Controller - Empty seç və aşağıdakı Add düyməsinə bas.Ad hissəsinə tam olaraq ChefController.cs yaz və Add bas.Yeni açılan bu faylın içindəki hər şeyi sil və bu təmiz CRUD kodlarını yapışdır:C#using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using EatryCafe.Data;
+using EatryCafe.Models;
+
+namespace EatryCafe.Controllers
+{
+    [Authorize]
+    public class ChefController : Controller
+    {
+        private readonly AppDbContext _context;
+
+        public ChefController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var chefs = await _context.Chefs.Where(x => !x.IsDeleted).ToListAsync();
+            return View(chefs);
+        }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(Chef model, IFormFile? ImageFile)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            if (ImageFile != null)
+            {
+                string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                string fileName = Guid.NewGuid().ToString() + "_" + ImageFile.FileName;
+                string filePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ImageFile.CopyToAsync(stream);
+                }
+
+                model.Image = "images/" + fileName;
+            }
+
+            await _context.Chefs.AddAsync(model);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            var chef = await _context.Chefs.FindAsync(id);
+            if (chef == null) return NotFound();
+
+            chef.IsDeleted = true;
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+    }
+}
+5. MƏRHƏLƏ: CRUD HTML (VIEW) FAYLLARINI YARATMAQSolution Explorer-də Views qovluğunun içinə bax. Orada Chef adında qovluq yaranıb-yaranmadığını yoxla. Əgər yoxdursa, Views qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ New Folder seç və adını Chef qoy.Addım 5.1: Index.cshtml yaratmaqBu yeni yaratdığın Chef qovluğunun üzərinə sağ düymə vur $\rightarrow$ Add $\rightarrow$ View seç.Razor View - Empty seç və Add düyməsinə bas.Adını Index.cshtml qoy və Add bas.İçindəki hər şeyi sil və bu kodu yapışdır:HTML@model List<EatryCafe.Models.Chef>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Admin Paneli - Aşpazlar</h2>
+        <a href="/Chef/Create" class="btn btn-success">Yeni Aşpaz Əlavə Et</a>
+    </div>
+
+    <table class="table table-striped table-bordered mt-4">
+        <thead class="table-dark">
+            <tr>
+                <th>Şəkil</th>
+                <th>Ad</th>
+                <th>Açıqlama</th>
+                <th>Əməliyyat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td><img src="~/@item.Image" width="80" /></td>
+                    <td>@item.Name</td>
+                    <td>@item.Desc</td>
+                    <td>
+                        <a href="/Chef/Delete/@item.Id" class="btn btn-danger btn-sm" onclick="return confirm('Silmək istədiyinizə əminsiniz?')">Sil</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+Addım 5.2: Create.cshtml yaratmaqYenə Views/Chef qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ View seç.Razor View - Empty seçib Add bas.Adını Create.cshtml qoy və Add bas.İçindəki hər şeyi sil və bu kodu yapışdır:HTML@model EatryCafe.Models.Chef
+
+<div class="container mt-5" style="max-width: 600px;">
+    <h2>Yeni Aşpaz Yarat</h2>
+
+    <form action="/Chef/Create" method="post" enctype="multipart/form-data" class="mt-4">
+        <div class="mb-3">
+            <label class="form-label">Adı</label>
+            <input type="text" name="Name" class="form-control" />
+            <span class="text-danger" asp-validation-for="Name"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Açıqlaması</label>
+            <textarea name="Desc" class="form-control" rows="3"></textarea>
+            <span class="text-danger" asp-validation-for="Desc"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Şəkil yüklə</label>
+            <input type="file" name="ImageFile" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Yadda Saxla</button>
+        <a href="/Chef/Index" class="btn btn-secondary">İmtina Et</a>
+    </form>
+</div>
+6. MƏRHƏLƏ: HomeController.cs YENİLƏMƏK VƏ ANA SƏHİFƏ FOREACH DÖVRÜAddım 6.1: HomeController.cs dəyişməkSolution Explorer-də Controllers qovluğunun daxilindəki HomeController.cs faylını klikləyərək aç.İçindəki köhnə kodları sil və bunu yapışdır:C#using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using EatryCafe.Data;
+
+namespace EatryCafe.Controllers
+{
+    public class HomeController : Controller
+    {
+        private readonly AppDbContext _context;
+
+        public HomeController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var data = await _context.Chefs.Where(x => !x.IsDeleted).ToListAsync();
+            return View(data);
+        }
+    }
+}
+Addım 6.2: Views/Home/Index.cshtml dövrə salmaqSolution Explorer-də Views $\rightarrow$ Home qovluğunun daxilindəki Index.cshtml faylını aç.Faylın ən birinci sətrinə (ən yuxarıya) bu kodu yapışdır:HTML@model List<EatryCafe.Models.Chef>
+İndi HTML kodlarının içindən o yanaşı duran 4 dənə kart olan hissəni (Aşpazlar və ya Xidmətlər bölməsini) tap.O kartlardan 3 dənəsini yuxarıdan aşağıya bütöv div-ləri ilə birlikdə sil. Yerdə qalan 1 tək kartı isə aşağıdakı kimi bu dövr kodunun arasına sıxışdır:HTML@foreach(var item in Model)
+{
+    <div class="col-lg-4 col-md-6">
+        <div class="team-item">
+            <img src="~/@item.Image" class="img-fluid" />
+            <h4>@item.Name</h4>
+            <p>@item.Desc</p>
+        </div>
+    </div>
+}
+7. MƏRHƏLƏ: AccountController.cs (LOGIN-REGISTER) YARATMAQControllers qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ Controller seç.MVC Controller - Empty seçib Add bas.Adını tam olaraq AccountController.cs qoy və Add düyməsinə bas.İçindəki hər şeyi silib bu hazır loqin-qeydiyyat mexanizmini yapışdır:C#using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EatryCafe.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+
+        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        {
+            _userManager = userManager;
+            _signInManager = signInManager;
+        }
+
+        public IActionResult Register() => View();
+
+        [HttpPost]
+        public async Task<IActionResult> Register(string username, string password)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password)) return View();
+
+            var user = new IdentityUser { UserName = username };
+            var result = await _userManager.CreateAsync(user, password);
+
+            if (result.Succeeded)
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return RedirectToAction("Index", "Home");
+            }
+            return View();
+        }
+
+        public IActionResult Login() => View();
+
+        [HttpPost]
+        public async Task<IActionResult> Login(string username, string password)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password)) return View();
+
+            var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("Index", "Chef");
+            }
+            return View();
+        }
+
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+    }
+}
+8. MƏRHƏLƏ: LOGIN VƏ REGISTER HTML FAYLLARINI BAĞLAMAQViews qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ New Folder et və adını Account qoy.
+Addım 8.1: Register.cshtmlViews/Account qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ View $\rightarrow$ Razor View Empty seç və adını Register.cshtml qoy.
+Əlindəki hazır Register HTML kodunu bura yapışdır.İstifadəçi adı yazdığın <input> teqinin içinə daxil ol və bura name="username" atributunu yaz.Şifrə yazdığın <input> teqinin 
+içinə daxil ol və bura name="password" atributunu yaz.Formanı başlatdığın <form> teqini tap və onu tam olaraq bu şəklə sal: <form action="/Account/Register" method="post">
+Addım 8.2: Login.cshtmlViews/Account qovluğuna sağ düymə vur $\rightarrow$ Add $\rightarrow$ View $\rightarrow$ Razor View Empty seç və adını Login.cshtml qoy.Əlindəki hazır Login HTML kodunu bura yapışdır.
+İstifadəçi adı yazdığın <input> teqinin içinə name="username" yaz.Şifrə yazdığın <input> teqinin içine name="password" yaz.Formanı başlatdığın <form> teqini tap və onu bu şəklə sal: <form action="/Account/Login" method="post">

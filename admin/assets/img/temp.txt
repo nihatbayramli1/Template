@@ -1,0 +1,59 @@
+ASP.NET core web app yarat 
+Programcs də şərhləri, development hissəsini sil
+views/home/privacy sil,views/shared/partial ve error sil 
+models içinden errorviewmodel sil
+homecontroller içində İactionresult dan başqa digerlerini sil
+
+
+1) FRONT TO BACK EDILMESI(30p)
+Template yüklə içindeki indexi vscode da aç
+Navbar hissesini (menu ve ondan yuxarısı) kopyala shared\layout da renderbody den yuxarıya repaste et
+Aşağıdan Footer a qeder(footer daxil) kopyala shared\layout da renderbody den aşağıya repaste et
+wwwroot dakilari sil yeni root yarat templatedəkiləri(php xaric) ora at
+Layout da css ve js hisselerini ctrl h et yazı önünü ~/ et ki root dan alsın
+index de yerdə qalanları (footer və menu arası yəni home a qədər home daxil) kopyala
+views/home/index ə repaste et
+index dəki image ləri ctrl h images yazısından sola ~/ at
+Bitdi
+
+2)SQL Constraintlərini yazmaq (10p)
+Models de Chef.cs yaratdıq ve BAse folderi yaratdıq.Base folderi içində BaseEntity yaratdıq.
+Base entity ni abstract class edirik çünki ancaq miras ötürəcək və namespace dəki base i silirik ki hərdəfə using etməmək üçün.......
+Base entity də public dən int id və bool dan isdelete verdik.
+chef.csni  baseentity dən miras adırırıq (chef yazısı qabağı iki nöqtə və class adı).
+Baxırıq chef in image i var string den saxlayırıq hələki
+String image, Name və description(desc) yazırıq.
+
+2.1)əlavə iş
+indi paketlər lazımdır
+Tools/package manager/manage for solution seçdik
+indi 4 paket var
+Microsoft.EntityFrameworkCore.tools
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore
+Microsoft.AspNetCore.Identity.EntityFrameworkCore
+
+2.2)davam
+Data faylı yaratdıq içində AppDbContext yaratdıq və ordakı class ın içinə default ctor yaratdıq 
+AppDbContext DbContext den miras aldı
+public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { } class içine bunu yazdıq
+Program cs hissesine bunu yazdıq
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    opt.UseSqlServer(builder.Configuration.GetConnectionString());
+});
+Internete appsettings connection string yazdıq
+ConnectionsString hissesini kopyala json a at defaultdan sagdakki sozu sil
+
+2.3)davam
+SQL aç
+Server adımı kopyala json daki server adının önünə at.
+Database adı template yada proyekt adı.
+program cs deki boş hissəyə Default yazırıq.
+AppDbContexte kec class içinə public DbSet<modeladı> Modeltableadi { get; set; } yazdıq.
+Tools (NuGet Package Manager Package Manager Console hissəsini aç
+add-migration createtable sonra update-database emri verdik
+SQl de table i top 200 de aç
+table da melumatları yazaq image elave edek və isdelete i 0 verek 
+Homecontroller a keç ctor yarat AddDbContext tipindən context ver alt+enter et içini özü doldursun
+İactionresult içinə gir
